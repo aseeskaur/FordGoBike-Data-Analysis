@@ -1,0 +1,263 @@
+---
+title: "Stat 650 Midterm"
+author: 'Asees Kaur, netid: rh7442'
+date: "September 11,2019"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tictoc)
+library(lubridate)
+library(ggplot2)
+library(Amelia)
+```
+
+
+
+
+\newpage 
+
+## Question 1. 
+
+Explain what the GBFS is?
+
+## Answer 1: 
+
+The General Bikeshare Feed Specification, known as GBFS, is the open data standard for bikeshare. GBFS makes real-time data feeds in a uniform format publicly available online, with an emphasis on findability.
+
+Under the North American Bikeshare Association’s leadership, GBFS has been developed by public, private sector and non-profit bike share system owners and operators, application developers, and technology vendors.
+
+GBFS is intended as a specification for real-time, read-only data - any data being written back into individual bikeshare systems are excluded from this spec.
+
+\newpage
+
+
+## Question 2: 
+
+Explain any difficulties you encountered getting the code to work.
+
+
+## Answer 2: 
+
+The data set took a long time to load. It was confusing in the beggining of why we had to load so many files and what were they.It was a little hard to load them one by one,but as we moved forward we saw that there was an easier way to load them all at once.  
+
+\newpage
+
+
+## Question 3: 
+
+
+The analysis is to work with the 2017 and 2018 data. How many bike rentals were there in 2017? How many bike rentals were there in 2018? How many bike rentals have there been since the beginning of Ford GoBikes?
+
+## Answer 3: 
+
+There were 519700 bike rentals in 2017.
+
+```{r}
+nrow(fordgobike2017)
+
+```
+
+
+There were 1018379 bike rentals in 2018. 
+
+
+```{r}
+nrow(fordgobike2018)
+```
+
+
+There have been 1538086 bike rentals since the beginning of the Ford GoBikes. 
+
+```{r}
+nrow(fordgobike)
+```
+
+
+
+\newpage 
+
+## Question 4: 
+
+There is a part of the code that uses the as.integer() function for some reason. Explain what this function is being used for in the code.
+
+## Answer 4: 
+
+The as.integer() function was used the code to change the type of the column start_statio_id and end_station_id. We had seven different data frames for seven different months in 2018 for the 2018 fordgobike data, so we wanted to merge those datasets together to form one data frame for 2018. But we noticed that in some of the months these columns were of type character and some were of type integer and to merge those columns together we needed them to be of the same data type. Thus we converted the character ones to integers using the function as.integer(). 
+
+\newpage 
+
+
+
+## Question 5: 
+
+How is the Age variable created? Are there any outliers in the data? How many outliers have you removed? State what you think is a good cut off is to remove any outliers.
+
+## Answer 5: 
+
+The age variable was created using the mutate function from the dplyr package. The mutate() function is used to create new variables or new column in our data. So we specified the variable name age inside the mutate function and gave it the formula to calulate the age, which was the current year(2019) - the birth year of that member given by the variable member_birth_year. 
+
+
+```{r}
+fordgobike <- fordgobike %>% mutate(age = 2019 - member_birth_year)
+
+```
+
+
+Yes, there are outliers in the data, as we see from the summary function there are a lot of people who used the bike rental service who are more than 100 years old, which realistically I do not think is true.This can actually be just an error on the part of the customer. I removed the the people above the age of 80, which seems like a good cutoff. 
+
+The name of my new data frame after removing the outliers is fordgobike2. The total outliers removed with this cutoff was 139973.  
+
+
+```{r}
+fordgobike %>% group_by( age ) %>% count()
+fordgobike %>% group_by( age ) %>% summary()
+
+fordgobike %>% ggplot(aes(x=age)) + geom_histogram()
+
+fordgobike %>% filter(age <= 80) %>% ggplot(aes(x=age)) + geom_histogram()
+
+fordgobike2 <- fordgobike %>% filter(age<=80)  # removing people greater than 80 years old
+
+n_outliers_removed <- nrow(fordgobike) - nrow(fordgobike2)
+n_outliers_removed #number of outliers removed
+
+summary(fordgobike2$age)
+
+```
+
+
+\newpage 
+
+
+## Question 6:
+
+In 2018, what month had the highest number of riders? What month had the lowest number of riders? Interpret any seasonal patterns.
+
+## Answer 6: 
+
+
+July has the most number of riders(199222) whereas January has the lowest number of riders(94802). 
+
+
+```{r}
+fordgobike %>% filter(year=="2018") %>% 
+  group_by(month) %>% count() %>%
+  arrange(desc(n))
+```
+
+
+From the above results it looks like in winter there are less riders, but as it starts getting warm we see a rise in the riders, which is understandable as people like to stay inside during the winter season whereas it is the opposite in the summer.
+
+
+\newpage 
+
+
+## Question 7:
+
+What start station had the highest number of rides? That is, which start station was used most to start rides?
+
+## Answer 7: 
+
+The station with most number of rides was San Francisco Ferry Building (Harry Bridges Plaza).
+
+
+```{r}
+fordgobike %>% group_by(start_station_name) %>% count() %>% 
+  arrange(desc(n)) %>% 
+  head(1)
+```
+
+
+
+\newpage 
+
+## Question 8: 
+
+What was the Age of the youngest rider? What was the Age of the oldest rider, after removing the outliers? What was the mean Age of the rider? What was the mean Age of the Female riders? What was the mean Age of the Male riders?
+
+
+## Answer 8: 
+
+The age of the youngest rider was 19.
+
+The age of the oldest rider is 80, after removing the outliers.
+
+The mean age of the rider is 37.09 after removing the outliers. The mean age of the riders before removing the outliers was 37.2, and these two values are very close to each other. 
+
+
+```{r}
+summary(fordgobike2$age)
+summary(fordgobike$age)
+```
+
+
+The mean age of the female riders after removing the outliers is 35.69 and before removing outliers was 35.79. 
+
+
+```{r}
+fordgobike2 %>% filter(member_gender == "Female") %>% select(age) %>% summary()
+
+
+fordgobike %>% filter(member_gender=="Female") %>% select(age) %>% summary()
+```
+
+
+The mean age of the male riders after removing the outliers is 37.54 and before removing the outliers it was 37.63.
+
+
+
+```{r}
+fordgobike2 %>% filter(member_gender == "Male") %>% select(age) %>% summary()
+
+
+fordgobike %>% filter(member_gender == "Male") %>% select(age) %>% summary()
+
+
+```
+
+\newpage 
+
+
+## Question 9: 
+
+Using the Amelia R package and the missmap() function determine the rate of missing data in the month of June. 
+
+
+## Answer 9: 
+
+Before removing the outliers, we have 1% missing data in the month of June whereas after removing the outliers the rate of missing data is almoset 0%. '
+
+
+```{r, warning=FALSE}
+
+june <- fordgobike %>% filter(month == "6")
+missmap(obj = june)
+
+june2 <- fordgobike2 %>% filter(month == "6")
+missmap(obj = june2)
+
+```
+
+
+\newpage 
+
+## Question 10: 
+
+What Type of rider uses the Ford goBikes more? Subscribers or Customers?
+
+## Answer 10:
+
+As seen from the results below only 271263 Customers used the Ford goBikes wheras 1266823 subscribers used the Ford goBikes service. 
+
+So we can conclude that Subscribers used the Ford GoBikes more than the Customers. 
+
+
+```{r}
+fordgobike %>% group_by(user_type) %>% count()
+```
+
